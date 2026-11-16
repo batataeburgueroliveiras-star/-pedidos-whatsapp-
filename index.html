@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#173a2f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Coronel">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Bistrô Central</title>
+<link rel="icon" href="coronel-polegar.jpg">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f2ede3;--card:#fffdf8;--tx:#1d1f1b;--mut:#66695f;--pri:#173a2f;--ac:#b9781a;--ok:#2c7a4b;--bad:#a3271c;--bd:#ddd5c5;--tag:#e7dfd0;--on:#fff;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#111513;--card:#1b211e;--tx:#ece7dc;--mut:#a2a89c;--pri:#0b1310;--ac:#e0a84a;--ok:#5fbf86;--bad:#f08577;--bd:#2f3a34;--tag:#2a332e;--on:#111;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#111513;--card:#1b211e;--tx:#ece7dc;--mut:#a2a89c;--pri:#0b1310;--ac:#e0a84a;--ok:#5fbf86;--bad:#f08577;--bd:#2f3a34;--tag:#2a332e;--on:#111;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:600;margin:.2em 0}
+header{background:var(--pri);color:#f4efe4;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header .logo{font:700 20px Georgia,serif;flex:1}
+nav{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;background:var(--card);border-bottom:1px solid var(--bd)}
+.w{max-width:1120px;margin:0 auto;padding:14px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px}
+button,a.b{font:inherit;border:0;border-radius:10px;padding:9px 14px;background:var(--ac);color:var(--on);cursor:pointer;font-weight:600;text-decoration:none;display:inline-block}
+a.b{background:var(--ok);color:#fff}
+button.s{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+button.ok{background:var(--ok);color:#fff}
+button.bad{background:var(--bad);color:#fff}
+button:disabled,option:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+input,select,textarea{font:inherit;width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+label{display:block;font-size:13px;color:var(--mut);margin:8px 0 3px}
+.r{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.tag{display:inline-block;font-size:12px;padding:2px 9px;border-radius:99px;background:var(--tag)}
+.late{color:var(--bad);font-weight:700}
+.cols{display:flex;gap:12px;overflow-x:auto;align-items:flex-start;padding-bottom:6px}
+.col{min-width:250px;flex:1;background:var(--tag);border-radius:14px;padding:10px}
+.ph{font-size:44px;text-align:center;background:var(--bg);border-radius:12px;padding:10px 0}
+.kd{font-size:17px}
+.sum{font-size:13px;color:var(--mut)}
+.warn{background:var(--tag);border-left:4px solid var(--ac);padding:8px 10px;border-radius:8px;font-size:13px}
+.step{display:flex;gap:8px;font-size:14px;padding:3px 0}
+#mo{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:9}
+#mo.on{display:flex}
+#mo>div{background:var(--card);width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px}
+#t{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--pri);color:#f4efe4;padding:10px 16px;border-radius:10px;display:none;z-index:10;max-width:90%}
+.bar{height:120px;display:flex;align-items:flex-end;gap:6px;margin:14px 0 24px}
+.bar div{flex:1;background:var(--ac);border-radius:6px 6px 0 0;min-height:2px;position:relative}
+.bar span{position:absolute;bottom:-18px;left:-4px;right:-4px;text-align:center;font-size:11px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header><img src="coronel-polegar.jpg" alt="Coronel" width="40" height="40" style="border-radius:10px"><div class="logo" id="logo">Bistrô Central</div><span class="tag">Prévia · dados neste navegador</span><span id="who"></span></header>
+<nav id="nav"></nav>
+<main class="w" id="app"></main>
+<div id="mo"></div><div id="t"></div>
+<script>
+const KEY='bistro-central-v1',SKEY='bc-ses',MKEY='bc-meus',$=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ALPHA='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const genCode=()=>[...crypto.getRandomValues(new Uint8Array(10))].map(b=>ALPHA[b%32]).join('');
+const normCode=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fmtCode=c=>c?c.slice(0,5)+'-'+c.slice(5):'';
+const STAT={novo:'Recebido · aguardando confirmação',aceito:'Confirmado',preparo:'Em preparação',pronto:'Pronto',rota:'Saiu para entrega',concluido:'Concluído',cancelado:'Cancelado'};
+const SL={novo:'Recebidos · aguardando confirmação',aceito:'Confirmados',preparo:'Em preparação',pronto:'Prontos',rota:'Saiu para entrega',concluido:'Concluídos',cancelado:'Cancelados'};
+const PAY={pix:'PIX (chave do restaurante)',dinheiro:'Dinheiro',cartao_entrega:'Cartão na entrega',cartao_retirada:'Cartão na retirada',pix_online:'PIX online',cartao_online:'Cartão online',credito:'Cartão de crédito',debito:'Cartão de débito',entrega:'Pagar na entrega',retirada:'Pagar na retirada'};
+const PAY_MOD={entrega:['pix','dinheiro','cartao_entrega'],retirada:['pix','dinheiro','cartao_retirada']};
+const ONLINE=['pix_online','cartao_online'];
+const TRAJ={entrega:['novo','aceito','preparo','pronto','rota','concluido'],retirada:['novo','aceito','preparo','pronto','concluido']};
+const ROLE={admin:'Administrador',atend:'Atendente',cozinha:'Cozinha',entregador:'Entregador'};
+const PANEL={atend:'Atendimento',cozinha:'Cozinha',entregador:'Entregas',admin:'Administração'};
+const PERM={admin:['atend','cozinha','entregador','admin'],atend:['atend'],cozinha:['cozinha'],entregador:['entregador']};
+const NEXT={'novo>aceito':['admin','atend'],'novo>cancelado':['admin','atend'],'aceito>cancelado':['admin','atend'],'aceito>preparo':['admin','cozinha'],'preparo>cancelado':['admin'],'preparo>pronto':['admin','cozinha'],'pronto>rota':['admin','entregador'],'pronto>concluido':['admin','atend'],'rota>concluido':['admin','entregador']};
+const money=v=>'R$ '+(+v).toFixed(2).replace('.',',');
+const mins=t=>Math.floor((Date.now()-t)/6e4);
+const eff=p=>p.price*(1-p.promo/100);
+const unit=(p,ad)=>+(eff(p)+ad.reduce((t,i)=>t+p.ad[i][1],0)).toFixed(2);
+const parseKV=s=>s.split(';').map(x=>x.split(':')).filter(a=>a[0]&&a[0].trim()).map(a=>[a[0].trim(),+(a[1]||0)||0]);
+const pr=(id,cat,name,desc,price,promo,e,av,ad)=>({id,cat,name,desc,price,promo,e,av,ad});
+const MENU=[
+['Entradas','001','BOLINHO DO CORONEL (10 und.)','massa de abóbora cabotiá recheado com carne seca e provolone',59],
+['Entradas','002','BOLINHO PORTAL DE MINAS (10 und.)','massa de mandioquinha, salsa, recheio de costelinha de porco desfiado, provolone e molho do chef',59],
+['Entradas','003','TIRO CERTO (10 und.)','bolinho com massa de milho verde, recheado com panceta desfiada e provolone, acompanhado de geléia de abacaxi com pimenta',65],
+['Entradas','004','PÃO DE PORCO (10 und.)','pão de queijo frito recheado com carne de porco desfiada e acompanhamento molho barbecue de goiabada artesanal',65],
+['Entradas','005','BOLINHO DE BACALHAU (10 und.)','',60],
+['Pratos executivos','006','SALADA COLORIDA','alface, rúcula, agrião, tomate, cenoura, pepino e molho da casa',39],
+['Pratos executivos','007','SALADA DO CHEF','mix de folhas, croutons, provolone, palmito, morango, tomate cereja e azeitona',46],
+['Pratos executivos','008','FILÉ ESPECIAL','150gr de filé de frango a milanesa, arroz branco, fritas, feijão e farofa da casa',42],
+['Pratos executivos','009','CALABRESA À MODA','calabresa fritada, fritas, arroz branco, feijão e farofa da casa',40],
+['Pratos executivos','010','HAMBÚRGUER NO PRATO','hamburguer artesanal de 140gr coberto com mussarela, tomate, fritas, arroz branco',45],
+['Pratos executivos','011','OMELETE DA CASA','omelete recheado com presunto e mussarela, fritas, arroz branco, feijão e farofa da casa',42],
+['Pratos executivos','012','FILÉ À PARMEGIANA DO CHEF','150gr filé mignon a milanesa, molho de tomate caseiro, coberto com mussarela, fritas e arroz branco',75],
+['Pratos executivos','013','FILÉ PARMEGIANA ESPECIAL','150gr filé de frango a milanesa, molho de tomate caseiro, coberto com mussarela, fritas e arroz branco',55],
+['Pratos executivos','014','PARMEGIANA DE TILÁPIA','150gr filé de tilápia a milanesa, molho de tomate caseiro, coberto com mussarela, fritas e arroz branco',70],
+['Pratos executivos','015','TILÁPIA À MODA','150gr filé de tilápia a milanesa, fritas, arroz branco, feijão e farofa da casa',55],
+['Pratos executivos','016','PICANHA DO CHEF','150gr picanha grelhada, mandioca frita, arroz branco, farofa da casa',75],
+['Pratos executivos','017','BIFE À CAVALO','150gr contra filé grelhado, fritas, arroz branco, ovo, vinagrete e farofa da casa',55],
+['Pratos executivos','018','SALMÃO À MODA','150gr salmão grelhado, fritas e arroz branco',70],
+['Pratos executivos','019','FILÉ DO CHEF','150gr filé mignon a milanesa, coberto com delicioso molho de gorgonzola, fritas e arroz branco',75],
+['Pratos executivos','020','FILÉ DA CASA','Filé de frango a milanesa com molho de gorgonzola, arroz branco e batata frita',60],
+['Pratos executivos','021','BISTECA MINEIRA','150gr bisteca de porco grelhada, mandioca frita, arroz branco, feijão e feijão de tropeiro',50],
+['Pratos executivos','022','PRATO KIDS','120gr filé mignon grelhado, arroz e fritas',45],
+['Caldos','023','CALDO DA CASA','Delicioso caldo de frango, queijo ralado e farinha',45],
+['Caldos','024','CALDO DO CHEF','Delicioso caldo de mandioca com carne seca, queijo ralado e farinha',55],
+['Lanches artesanais','025','CORONEL CHEDDAR BURGUER','pão de brioche, hambúrguer artesanal, cheddar fatiado, cebola caramelizada, bacon e molho especial',50],
+['Lanches artesanais','026','CORONEL SALADA BURGUER','pão de hambúrguer, hambúrguer artesanal, mussarela, picles, cebola roxa, alface, tomate e maionese da casa',45],
+['Lanches artesanais','027','CORONEL ONION BURGUER','pão de hambúrguer, hambúrguer artesanal, onion rings, mussarela, molho barbecue e maionese da casa',50],
+['Lanches artesanais','028','CORONEL PREMIUM BURGUER','pão de brioche, hambúrguer artesanal, gorgonzola, bacon, rúcula, tomate e maionese da casa',55],
+['Lanches artesanais','029','CORONEL CHICKEN BURGUER','pão de hambúrguer, frango empanado e frito, mix de folhas, tomate cereja, catupiry original e geleia de pimenta',45],
+['Lanches artesanais','030','CORONEL BIG BURGUER','pão de brioche, 2 hambúrgueres artesanais, cheddar fatiado, bacon e maionese da casa',69],
+['Lanches artesanais','031','CORONEL TRIPLO BURGUER','pão de brioche, 3 hambúrgueres artesanais, cheddar fatiado, bacon e maionese da casa',65],
+['Lanches artesanais','032','CORONEL ORIGINAL BURGUER','pão de hambúrguer, hambúrguer artesanal, catupiry original, farofa de bacon e maionese da casa',48],
+['Lanches artesanais','033','CORONEL KIDS BURGUER','pão de hambúrguer, hambúrguer artesanal, cheddar fatiado, maionese da casa',40],
+['Lanches artesanais','034','CORONEL BURGUER','pão, hambúrguer artesanal, queijo e maionese da casa',35],
+['Lanches artesanais','035','CORONEL BACON BURGUER','pão, hambúrguer artesanal, cheddar fatiado, alface, tomate, bacon e maionese da casa',40],
+['Lanches artesanais','036','CORONEL EGG BURGUER','hambúrguer artesanal, cheddar fatiado, alface, tomate, ovo e maionese da casa',38],
+['Lanches artesanais','037','CORONEL COSTELA','hambúrguer de 150 gramas, queijo cheddar inglês, costela desfiada, maionese defumada e pão de brioche',50],
+['Lanches clássicos','038','X FRANGO','Filé de frango grelhado, mussarela, alface, tomate e maionese da casa',35],
+['Lanches clássicos','039','X TUDO','Filé de frango, mussarela, bacon, ovo, milho, batata palha, alface, tomate e maionese da casa',52],
+['Lanches clássicos','040','X CORONEL CX TUDO','Hambúrguer artesanal, filé de frango, calabresa fatiada, presunto, mussarela, bacon, ovo, milho, batata palha e maionese da casa',62],
+['Lanches clássicos','041','PICANHA À MODA','Pão, hambúrguer artesanal, mussarela, bacon, rúcula, tomate e maionese da casa',60],
+['Lanches clássicos','042','FILÉ DA CASA','Pão, filé mignon, mussarela, bacon, alface, tomate e maionese da casa',60],
+['Lanches clássicos','043','CHURRASCO CORONEL','150gr de contra filé, mussarela, bacon, vinagrete e maionese da casa',55],
+['Porções da casa','044','ONION RINGS','500gr de anel de cebola empanada e molho barbecue',65],
+['Porções da casa','045','FRITAS SIMPLES','500gr de batata frita e molho da casa',55],
+['Porções da casa','046','FRITAS DA CASA','500gr de batata frita coberta com mussarela, bacon e molho da casa',69],
+['Porções da casa','047','FRITAS DO CHEF','500gr de batata frita coberta com mussarela, cheddar cremoso, catupiry, bacon e molho da casa',85],
+['Porções da casa','048','ISCA DE FRANGO','400gr de tiras de frango à milanesa e molho especial da casa',70],
+['Porções da casa','049','TORRESMO DO CHEF','400gr de panceta super crocante e geléia de pimenta',75],
+['Porções da casa','050','BOLINHO DE BACALHAU','12 unidades de bolinho de bacalhau e molho da casa',60],
+['Porções da casa','051','TRIO MINEIRO','200gr de batata frita, 200gr de polenta, 200gr de mandioca frita, vinagrete, farofa, molho especial da casa e pão na chapa',110],
+['Porções da casa','052','FRANGO À PASSARINHO','800gr de frango frito e molho especial da casa',75],
+['Porções da casa','053','PARMEGIANA ESPECIAL','500gr de isca de frango a milanesa, molho caseiro de tomate, coberto com mussarela e pão na chapa',115],
+['Porções da casa','054','PARMEGIANA DO CHEF','500gr de isca filé mignon a milanesa, molho de tomate caseiro, coberto com mussarela e pão na chapa',130],
+['Porções da casa','055','TILÁPIA DO CHEF','500gr de filé de tilápia a milanesa e molho da casa',92],
+['Porções da casa','056','TÁBUA DE FRIOS','mussarela, presunto, provolone, salame, gorgonzola, tomate cereja e azeitona',115],
+['Porções da casa','057','TRIO CARNES','200gr de contra filé, 200 gr de filé de frango, 200gr de linguiça calabresa, pão na chapa, vinagrete, farofa e molho da casa',145],
+['Porções da casa','058','PICANHA DO CHEF','300gr de picanha grelhada, 300gr de fritas, vinagrete, farofa, pão na chapa e molho da casa',160],
+['Porções da casa','059','FILÉ DO CHEF','400gr de filé mignon a milanesa coberto com delicioso molho de gorgonzola, 300gr de batata frita',140],
+['Porções da casa','060','PORÇÃO DE CALABRESA','300gr de calabresa acebolada super crocante acompanhado de uma deliciosa geleia artesanal de pimenta',60],
+['Porções da casa','061','LEMBRANÇA DA VOVÓ','500gr de deliciosas carne de porco na lata, 300gr de mandioca frita, acompanhado de barbecue de goiabada',160],
+['Sobremesas','062','PETIT GATEAU','petit gateau com delicioso sorvete de creme, cobertura de chocolate',25],
+['Sobremesas','063','PALETA CORONEL','petit gateau, paleta de ninho com nutella, morango com cobertura de chocolate',35],
+['Sobremesas','064','PUDIM DE LEITE CONDENSADO','delicioso pudim feito com leite moça',18],
+['Sobremesas','065','PUDIM DA BARONESA','pudim de café com calda de caramelo',20],
+['Bebidas','066','ÁGUA SEM GÁS','',5],
+['Bebidas','067','ÁGUA COM GÁS','',6],
+['Bebidas','068','ÁGUA TÔNICA','',9],
+['Bebidas','069','REFRIGERANTE LATA','coca cola, fanta laranja, fanta uva, guaraná, sprite',15],
+['Bebidas','070','REFRIGERANTE 600 ML','coca cola, fanta laranja, guaraná',20],
+['Bebidas','071','REFRIGERANTE 2 LITROS','coca cola, fanta laranja, guaraná',18],
+['Bebidas','072','ENERGÉTICO RED BULL','',18],
+['Bebidas','073','ENERGÉTICO MONSTER','',18],
+['Sucos','074','ABACAXI','',15],
+['Sucos','075','ABACAXI C/ HORTELÃ','',16],
+['Sucos','076','ACEROLA','',15],
+['Sucos','077','AÇAÍ','',17],
+['Sucos','078','AMORA','',16],
+['Sucos','079','BLUEBERRY','',17],
+['Sucos','080','FRUTAS VERMELHAS','',17],
+['Sucos','081','GOIABA','',14],
+['Sucos','082','LARANJA','',15],
+['Sucos','083','LARANJA C/ ACEROLA','',17],
+['Sucos','084','LIMÃO','',14],
+['Sucos','086','MANGA','',15],
+['Sucos','085','MARACUJÁ','',17],
+['Sucos','087','MORANGO','',15],
+['Sucos','088','TANGERINA','',16],
+['Cervejas em lata','090','SKOL','',8],
+['Cervejas em lata','091','AMSTEL','',9],
+['Cervejas em lata','092','ORIGINAL','',10],
+['Cervejas em lata','093','HEINEKEN','',13],
+['Cervejas em lata','094','BRAHMA O...','',13],
+['Cervejas em lata','095','HEINEKEN O...','',11],
+['Cervejas em lata','096','SKOL BEATS','',16],
+['Cervejas em garrafa','097','SKOL','',16],
+['Cervejas em garrafa','098','BRAHMA','',17],
+['Cervejas em garrafa','099','ORIGINAL','',22],
+['Cervejas em garrafa','100','AMSTEL','',19],
+['Cervejas em garrafa','101','HEINEKEN','',24],
+['Cervejas em garrafa','102','EISENBAHN','',20],
+['Long neck','103','BUDWEISER','',14],
+['Long neck','104','STELLA ARTOIS','',15],
+['Long neck','105','CORONA','',17],
+['Long neck','106','HEINEKEN','',15],
+['Long neck','107','EISENBAHN','',14],
+['Long neck','108','SKOL BEATS','',17],
+['Chopp','109','CANECA 300 ML','',14],
+['Chopp','110','TORRE DE 2,5 ML','',90],
+['Chopp de vinho','111','CANECA DE 300 ML','',17],
+['Chopp de vinho','112','TORRE DE 2,5 ML','',120],
+['Drinks','113','ESPANHOLA','vinho, vodka, abacaxi, morango, leite moça',35],
+['Drinks','114','CAIPIRINHA (COM CACHAÇA) 1 FRUTA','Escolha sua fruta: limão, maracujá, manga, morango, abacaxi, kiwi, frutas vermelhas, amora e blueberry',30],
+['Drinks','115','CAIPIRINHA (COM CACHAÇA) 2 FRUTAS','Escolha sua fruta: limão, maracujá, manga, morango, abacaxi, kiwi, frutas vermelhas, amora e blueberry',35],
+['Drinks','116','CAIPIROSKA (COM VODKA) 1 FRUTA','Escolha sua fruta: limão, maracujá, manga, morango, abacaxi, kiwi',38],
+['Drinks','117','CAIPIROSKA (COM VODKA) 2 FRUTAS','Escolha sua fruta: limão, maracujá, manga, morango, abacaxi, kiwi',43],
+['Drinks','118','SAQUERINHA (COM SAQUE) 1 FRUTA','Escolha sua fruta: limão, maracujá, manga, morango, abacaxi, kiwi',37],
+['Drinks','119','SAQUERINHA (COM SAQUE) 2 FRUTAS','Escolha sua fruta: limão, maracujá, manga, morango, abacaxi, kiwi',42],
+['Drinks','120','GIN TÔNICA 1 FRUTA','Escolha sua fruta: limão, maracujá, manga, morango, abacaxi, kiwi',37],
+['Drinks','121','GIN TÔNICA 2 FRUTAS','Escolha sua fruta: limão, maracujá, manga, morango, abacaxi, kiwi',45],
+['Doses','122','VODKA COMUM','',10],
+['Doses','123','VODKA SMIRNOFF','',20],
+['Doses','124','VODKA ABSOLUT','',30],
+['Doses','125','RED LABEL','',30],
+['Doses','126','WHITE HORSE','',25],
+['Doses','127','JACK DANIELS','',40],
+['Doses','128','CAMPARI','',20],
+['Doses','129','DOMECQ','',16],
+['Doses','130','LICOR 43','',35],
+['Doses','131','CACHAÇA ARTESANAL','',12],
+['Doses','132','CACHAÇA BOASINHA','',20],
+['Doses','133','CACHAÇA SELETA','',20],
+['Doses','134','CACHAÇA SALINAS','',20],
+['Doses','135','TAÇA DE VINHO','',20]
+];
+const ACR=[['Picanha',30],['Frango',15],['Contra filé',25],['Hambúrguer',15],['Salada simples',15],['Arroz',15],['Feijão',15],['Ovo',4]];
+const TURB=[['Hambúrguer artesanal',15],['Hambúrguer de frango',10],['Fritas individual',15],['Ovo',4],['Bacon',5],['Cheddar cremoso',5],['Cheddar fatiado',6],['Catupiry original',7],['Requeijão cremoso',5],['Picles',3],['Alface',3],['Tomate',3],['Cebola caramelizada',5]];
+const PONTO=[['Ponto: ao ponto',0],['Ponto: mal passada',0],['Ponto: bem passada',0]];
+const UPG=[['Fritas, onion rings ou 5 unid. de nuggets',15]];
+const LEITE=[['Acréscimo de leite',2]];
+const ADIC={'Pratos executivos':ACR,'Lanches artesanais':[...TURB,...PONTO,...UPG],'Lanches clássicos':[...TURB,...PONTO,...UPG],'Sucos':LEITE};
+function buildMenu(){return MENU.map(([cat,cod,name,desc,price])=>({id:'m'+cod,cod,cat,name,desc,price,promo:0,e:'🍽️',av:1,ad:ADIC[cat]||[]}))}
+const hex=n=>[...crypto.getRandomValues(new Uint8Array(n))].map(b=>b.toString(16).padStart(2,'0')).join('');
+const ATIVOS=['novo','aceito','preparo','pronto','rota'];
+let S,SES=null,R='cliente',V={view:'menu',cat:'Todos',q:'',bq:'',trk:'',qty:1,cpn:'',per:'7d',adm:'dash',mod:'entrega',pay:'pix',sending:false,tk:''},ST={cnt:-1,tt:0};
+
+/* ---------- dados ---------- */
+function seedUsers(){return [
+  {id:'u1',n:'Administrador',user:'admin',r:'admin',on:1,s:'',h:''},
+  {id:'u2',n:'Ana Atendente',user:'ana',r:'atend',on:1,s:'',h:''},
+  {id:'u3',n:'Bruno Cozinha',user:'bruno',r:'cozinha',on:1,s:'',h:''},
+  {id:'u4',n:'Carla Entregas',user:'carla',r:'entregador',on:1,s:'',h:''}];}
+function seed(){
+  const T=Date.now(),m=6e4;
+  S={s:{name:'Bistrô Central',hours:'Ter a dom, 18h às 23h',open:1,prep:25,min:30,fee:10,fees:{Centro:5,Jardins:8},wa:'5511900000000',pix:'pix@bistrocentral.com.br'},
+  p:buildMenu(),
+  cp:{BISTRO10:10},bairros:[{id:'b1',nome:'Centro',taxa:5,ativo:true},{id:'b2',nome:'Jardins',taxa:8,ativo:true}],o:[],cart:[],seq:1041,snd:1,lp:'',u:seedUsers(),log:[]};
+  place({n:'Ana Lima',p:'(11) 98765-4321',a:'Rua das Flores',num:'120',comp:'Apto 31',b:'Centro',ref:'Portão azul',obs:''},'entrega','pix',[{pid:'m035',qty:1,ad:[],obs:'sem cebola'},{pid:'m045',qty:1,ad:[],obs:''}],'','',T-4*m,'novo');
+  place({n:'Carlos Souza',p:'(11) 97777-1212',obs:''},'retirada','dinheiro',[{pid:'m037',qty:1,ad:[],obs:''},{pid:'m070',qty:2,ad:[],obs:''}],'',50,T-31*m,'preparo');
+  place({n:'Mariana Reis',p:'(11) 96666-3434',a:'Alameda Santos',num:'45',comp:'',b:'Jardins',ref:'',obs:'Campainha 2'},'entrega','cartao_entrega',[{pid:'m025',qty:2,ad:[],obs:''}],'BISTRO10','',T-12*m,'pronto');
+  place({n:'Pedro Alves',p:'(11) 95555-7878',a:'Rua Augusta',num:'900',comp:'',b:'Centro',ref:'',obs:''},'entrega','dinheiro',[{pid:'m069',qty:1,ad:[],obs:''}],'',50,T-70*m,'concluido');
+  S.o[0].pagst='recebido';
+  return S;
+}
+/* Migração: preserva todos os registros da versão anterior e completa os campos novos */
+function normalize(){
+  if(!S.bairros){S.bairros=Object.entries((S.s&&S.s.fees)||{}).map(([n,t],i)=>({id:'m'+(i+1),nome:n,taxa:+t,ativo:true}))}
+  if(!S.menu4){S.p=buildMenu();S.cart=[];S.menu4=1}
+  S.u=S.u||seedUsers();S.log=S.log||[];S.cp=S.cp||{};
+  S.o.forEach(o=>{o.cod=o.cod||genCode();o.pagst=o.pagst||'pendente';o.motivo=o.motivo||'';o.ocor=o.ocor||[];o.prio=o.prio||0;o.tk=o.tk||'';
+    o.hist=(o.hist||[]).map(h=>h.length<3?[h[0],h[1],'Sistema']:h)});
+}
+function load(){
+  try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.p){S=d;normalize();return}}catch(e){}
+  seed();
+}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function reload(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.p){S=d;normalize()}}catch(e){}}
+function save(){persist();render()}
+function loadSes(){try{SES=JSON.parse(sessionStorage.getItem(SKEY))}catch(e){SES=null}
+  if(SES){const u=S.u.find(x=>x.id===SES.uid);if(!u||!u.on)SES=null}}
+const meus=()=>{try{return JSON.parse(localStorage.getItem(MKEY))||[]}catch(e){return []}};
+function remember(cod){try{const m=meus().filter(c=>c!==cod);m.unshift(cod);localStorage.setItem(MKEY,JSON.stringify(m.slice(0,50)))}catch(e){}}
+const who=()=>SES?`${SES.n} (${ROLE[SES.r]})`:'Cliente';
+const log=(a,ref)=>{S.log.unshift([Date.now(),who(),a,ref||'']);S.log=S.log.slice(0,300)};
+const find=id=>S.o.find(x=>x.id===id);
+const stLabel=(o,st)=>{st=st||o.st;
+  if(st==='pronto')return o.mod==='retirada'?'Pronto · aguardando retirada':'Pronto · aguardando entregador';
+  if(st==='concluido')return o.mod==='retirada'?'Retirado':'Entregue';
+  return STAT[st]||st};
+const timeline=o=>{const t=TRAJ[o.mod]||TRAJ.entrega,i=t.indexOf(o.st);return t.map((k,j)=>({label:stLabel(o,k),done:j<=i,cur:j===i}))};
+const bairroOk=b=>{const n=(b||'').trim().toLowerCase();return (S.bairros||[]).find(x=>x.ativo&&x.nome.toLowerCase()===n)||null};
+const feeFor=b=>{const x=bairroOk(b);return x?x.taxa:null};
+function totals(cart,cpn,mod,b){
+  const sub=cart.reduce((t,x)=>t+unit(S.p.find(p=>p.id===x.pid),x.ad)*x.qty,0);
+  const disc=cpn&&S.cp[cpn]?+(sub*S.cp[cpn]/100).toFixed(2):0;
+  const fee=mod==='entrega'?(feeFor(b)||0):0;
+  return {sub,disc,fee,tot:sub-disc+fee};
+}
+function place(c,mod,pay,cart,cpn,troco,ts,st,tk){
+  const it=cart.map(x=>{const p=S.p.find(q=>q.id===x.pid);return{n:p.name,q:x.qty,u:unit(p,x.ad),ad:x.ad.map(i=>p.ad[i][0]),obs:x.obs||''}});
+  const t=totals(cart,cpn,mod,c.b),d=ts||Date.now(),s0=st||'novo';
+  const od={id:'#'+S.seq++,cod:genCode(),tk:tk||'',ts:d,c,mod,pay,troco:troco||'',it,...t,cpn:cpn&&S.cp[cpn]?cpn:'',st:s0,pagst:'pendente',hist:[[s0,d,'Sistema']],ocor:[],prio:0,motivo:''};
+  S.o.unshift(od);return od;
+}
+function canMove(o,to){
+  const k=o.st+'>'+to,ok=NEXT[k];
+  if(!ok||!SES||!ok.includes(SES.r))return false;
+  if(k==='pronto>rota'&&o.mod!=='entrega')return false;
+  if(k==='pronto>concluido'&&o.mod!=='retirada')return false;
+  return true;
+}
+function setSt(id,to){
+  const o=find(id);if(!o)return;
+  if(!canMove(o,to))return toast('Esta ação não está disponível para o seu perfil');
+  o.st=to;o.hist.push([to,Date.now(),who()]);log('Status: '+stLabel(o,to),o.id);save();
+}
+
+/* ---------- interface ---------- */
+function render(){
+  if(!SES&&R!=='cliente')R='login';
+  if(SES&&R!=='cliente'&&!PERM[SES.r].includes(R))R=PERM[SES.r][0];
+  $('#logo').textContent=S.s.name;
+  $('#who').innerHTML=SES?`<span class="sum" style="color:#f4efe4">${esc(SES.n)} · ${esc(ROLE[SES.r])}</span>`:'';
+  const b=(r,l)=>`<button class="${R===r?'':'s'}" data-a="go" data-r="${r}">${esc(l)}</button>`;
+  $('#nav').innerHTML=b('cliente','Cardápio')+(SES?PERM[SES.r].map(r=>b(r,PANEL[r])).join('')+'<button class="s" data-a="logout">Sair</button>':b('login','Equipe · entrar'));
+  $('#app').innerHTML={cliente:vCli,login:vLogin,atend:vAtend,cozinha:vCoz,entregador:vEnt,admin:vAdm}[R]();
+  const n=S.o.filter(x=>x.st==='novo').length;
+  if(R==='atend'&&ST.cnt>=0&&n>ST.cnt){if(S.snd)beep();toast('Novo pedido recebido')}
+  ST.cnt=n;
+}
+function modal(h){$('#mo').innerHTML=`<div>${h}<div style="text-align:right;margin-top:12px"><button class="s" data-a="close">Fechar</button></div></div>`;$('#mo').classList.add('on')}
+function closeModal(){$('#mo').classList.remove('on');$('#mo').innerHTML=''}
+function toast(m){const t=$('#t');t.textContent=m;t.style.display='block';clearTimeout(ST.tt);ST.tt=setTimeout(()=>t.style.display='none',2600)}
+function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.frequency.value=880;o.connect(c.destination);o.start();o.stop(c.currentTime+.35)}catch(e){}}
+const checked=()=>[...document.querySelectorAll('input[name=ad]:checked')].map(i=>+i.value);
+const totHTML=t=>`<div class="r"><span>Subtotal</span><span>${money(t.sub)}</span></div>${t.disc?`<div class="r"><span>Desconto</span><span>− ${money(t.disc)}</span></div>`:''}<div class="r"><span>Taxa de entrega</span><span>${money(t.fee)}</span></div><div class="r kd" style="margin-top:6px"><b>Total</b><b>${money(t.tot)}</b></div>`;
+
+/* ---------- acesso da equipe (demonstração) ---------- */
+async function hash(p,s){
+  const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);
+  const b=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(s),iterations:100000,hash:'SHA-256'},k,256);
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+async function initUsers(){
+  try{let c=0;for(const u of S.u)if(!u.h){u.s=hex(16);u.h=await hash('demo123',u.s);c++}if(c)persist()}catch(e){}
+}
+async function doLogin(f){
+  const d=Object.fromEntries(new FormData(f));
+  const u=S.u.find(x=>x.user===(d.user||'').trim().toLowerCase()&&x.on);
+  if(!u||!u.h)return toast('Usuário ou senha inválidos');
+  let ok=false;
+  try{ok=u.h===await hash(d.pass||'',u.s)}catch(e){return toast('Este navegador não consegue verificar senhas com segurança')}
+  if(!ok)return toast('Usuário ou senha inválidos');
+  SES={uid:u.id,n:u.n,r:u.r};sessionStorage.setItem(SKEY,JSON.stringify(SES));
+  log('Login','');R=PERM[u.r][0];save();
+}
+function logout(){log('Sair','');SES=null;sessionStorage.removeItem(SKEY);R='cliente';save()}
+function vLogin(){return `<div class="c" style="max-width:420px;margin:24px auto">
+  <h2>Acesso da equipe</h2><p class="sum">Painéis internos para administração, atendimento, cozinha e entregas.</p>
+  <div class="warn" style="margin:10px 0">Prévia: esta autenticação é de demonstração e não protege dados reais. A proteção definitiva depende do Supabase Auth e das regras RLS. Acesso restrito à equipe. Esta versão ainda não está conectada ao Supabase.</div>
+  <form id="login"><label>Usuário</label><input name="user" required autocomplete="username"><label>Senha</label><input name="pass" type="password" required autocomplete="current-password">
+  <button type="submit" style="width:100%;margin-top:14px">Entrar</button></form>
+  <button class="s" data-a="forgot" style="width:100%;margin-top:10px">Esqueci minha senha</button></div>`;
+}
+
+/* ---------- CLIENTE (público, sem login) ---------- */
+function vCli(){
+  if(V.view==='cart')return vCart();
+  if(V.view==='checkout')return vCheck();
+  if(V.view==='ok')return vOk();
+  if(V.view==='pedidos')return vPed();
+  if(V.view==='acomp')return vAcomp();
+  const s=S.s,cats=['Todos',...new Set(S.p.map(p=>p.cat))],n=S.cart.reduce((a,x)=>a+x.qty,0);
+  return `<div class="c" style="text-align:center"><h2>${esc(s.name)}</h2><div class="sum">${esc(s.hours)}</div>
+  <p><span class="tag" style="background:${s.open?'#d5ecdc':'#f3d2cd'}">${s.open?'Aberto agora':'Fechado no momento'}</span> <span class="tag">Entrega em cerca de ${s.prep+15} min</span></p></div>
+  <div class="r" style="margin:14px 0"><input id="q" placeholder="Pesquisar no cardápio" value="${esc(V.q)}" style="max-width:300px">
+  <div class="r" style="gap:6px;justify-content:flex-end"><button class="s" data-a="view" data-v="pedidos">Meus pedidos</button><button class="s" data-a="view" data-v="acomp">Acompanhar pedido</button></div></div>
+  <div class="r" style="justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap">${cats.map(c=>`<button class="${c===V.cat?'':'s'}" data-a="cat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+  <div id="grid" class="g" style="margin:14px 0">${grid()}</div>
+  <div style="position:sticky;bottom:12px;text-align:center"><button data-a="view" data-v="cart" style="box-shadow:0 6px 18px #0004">Ver carrinho (${n}) · ${money(totals(S.cart,V.cpn,'retirada','').sub)}</button></div>`;
+}
+function grid(){
+  const q=V.q.toLowerCase();
+  const lst=S.p.filter(p=>(V.cat==='Todos'||p.cat===V.cat)&&(p.name+' '+p.desc).toLowerCase().includes(q));
+  return lst.map(p=>`<div class="c"><div class="ph"><img src="coronel-triste.jpg" alt="Imagem provisória do produto" style="width:100%;max-height:150px;object-fit:contain;border-radius:12px"></div>
+  <div class="r" style="margin-top:8px"><b>${esc(p.name)}</b>${p.promo?`<span class="tag" style="background:var(--ac);color:var(--on)">−${esc(p.promo)}%</span>`:''}</div>
+  <div class="sum">${esc(p.desc)}</div>
+  <div class="r" style="margin-top:10px"><span>${p.promo?`<s class="sum">${money(p.price)}</s> `:''}<b class="kd">${money(eff(p))}</b></span>
+  ${p.av?`<button data-a="open" data-id="${esc(p.id)}">Adicionar</button>`:'<span class="tag">Indisponível</span>'}</div></div>`).join('')||'<div class="sum">Nenhum produto encontrado.</div>';
+}
+function openProd(id){
+  V.pid=id;V.qty=1;const p=S.p.find(x=>x.id===id);
+  modal(`<h3>${esc(p.e)} ${esc(p.name)}</h3><div class="sum">${esc(p.desc)}</div>
+  ${p.ad.length?'<label>Adicionais</label>'+p.ad.map((a,i)=>`<label class="r" style="color:var(--tx);margin:6px 0"><span><input type="checkbox" name="ad" value="${i}" style="width:auto"> ${esc(a[0])}</span><span>+ ${money(a[1])}</span></label>`).join(''):''}
+  <label>Observações</label><textarea id="obs" rows="2" maxlength="300" placeholder="Ex.: sem cebola, ponto da carne"></textarea>
+  <div class="r" style="margin-top:14px"><div class="r" style="gap:6px"><button class="s" data-a="q" data-d="-1">−</button><b id="qv" style="min-width:24px;text-align:center">1</b><button class="s" data-a="q" data-d="1">+</button></div>
+  <button data-a="addcart">Adicionar · <span id="pv">${money(eff(p))}</span></button></div>`);
+}
+function updPv(){const p=S.p.find(x=>x.id===V.pid);$('#pv').textContent=money(unit(p,checked())*V.qty)}
+function vCart(){
+  const back='<button class="s" data-a="view" data-v="menu">← Voltar ao cardápio</button>';
+  if(!S.cart.length)return `<div class="c" style="text-align:center"><img src="coronel-caneca.jpg" alt="" style="width:160px;max-width:60%"><p>Seu carrinho está vazio.</p>${back}</div>`;
+  const rows=S.cart.map((x,i)=>{const p=S.p.find(q=>q.id===x.pid);return `<div class="c r" style="margin-bottom:10px"><div><b>${esc(p.name)}</b><div class="sum">${x.ad.map(j=>'+ '+esc(p.ad[j][0])).join(', ')}${x.obs?' · '+esc(x.obs):''}</div></div>
+  <div class="r" style="gap:6px"><button class="s" data-a="cq" data-i="${i}" data-d="-1">−</button><b>${x.qty}</b><button class="s" data-a="cq" data-i="${i}" data-d="1">+</button><b style="min-width:80px;text-align:right">${money(unit(p,x.ad)*x.qty)}</b><button class="s" data-a="crm" data-i="${i}" title="Remover">✕</button></div></div>`}).join('');
+  const t=totals(S.cart,V.cpn,'retirada',''),ok=t.sub-t.disc>=S.s.min&&S.s.open;
+  return `${back}<h2 style="margin-top:12px">Carrinho</h2>${rows}
+  <div class="c"><div class="r"><input id="cp" placeholder="Cupom" value="${esc(V.cpn)}" style="max-width:220px"><button class="s" data-a="cupom">Aplicar</button></div>
+  <div class="r" style="margin-top:10px"><span>Subtotal</span><b>${money(t.sub)}</b></div>
+  ${t.disc?`<div class="r"><span>Desconto</span><b style="color:var(--ok)">− ${money(t.disc)}</b></div>`:''}
+  <div class="sum" style="margin-top:6px">Pedido mínimo ${money(S.s.min)}${t.sub-t.disc<S.s.min?' · faltam '+money(S.s.min-(t.sub-t.disc)):''}</div>
+  <button data-a="view" data-v="checkout" style="width:100%;margin-top:12px" ${ok?'':'disabled'}>Ir para finalização</button>
+  ${S.s.open?'':'<div class="sum" style="margin-top:6px">Restaurante fechado no momento.</div>'}</div>`;
+}
+function payOptions(){
+  return PAY_MOD[V.mod].concat(ONLINE).map(k=>`<option value="${esc(k)}" ${k===V.pay?'selected':''} ${ONLINE.includes(k)?'disabled':''}>${esc(PAY[k])}${ONLINE.includes(k)?' · pendente de configuração':''}</option>`).join('');
+}
+function paySwitch(){
+  $('#pixinfo').style.display=V.pay==='pix'?'block':'none';
+  $('#troco').style.display=V.pay==='dinheiro'?'block':'none';
+}
+function vCheck(){
+  const t=totals(S.cart,V.cpn,V.mod,'');
+  if(!V.tk)V.tk=Date.now().toString(36)+hex(6);
+  if(!PAY_MOD[V.mod].includes(V.pay))V.pay=PAY_MOD[V.mod][0];
+  return `<button class="s" data-a="view" data-v="cart">← Voltar ao carrinho</button>
+  <h2 style="margin-top:12px">Finalizar pedido</h2>
+  <form id="ck" class="c" novalidate><input type="hidden" name="tk" value="${esc(V.tk)}">
+  <label>Nome</label><input name="n" required maxlength="80">
+  <label>Telefone ou WhatsApp</label><input name="p" required inputmode="tel" placeholder="(11) 90000-0000" maxlength="20">
+  <label>Como prefere receber</label>
+  <div class="r" style="justify-content:flex-start;gap:14px">
+    <label style="margin:0;color:var(--tx)"><input type="radio" name="mod" value="entrega" ${V.mod==='entrega'?'checked':''} style="width:auto"> Entrega</label>
+    <label style="margin:0;color:var(--tx)"><input type="radio" name="mod" value="retirada" ${V.mod==='retirada'?'checked':''} style="width:auto"> Retirada no restaurante</label></div>
+  <div id="addr" style="display:${V.mod==='entrega'?'block':'none'}">
+    <label>Endereço</label><input name="a" maxlength="120">
+    <div class="r" style="gap:10px"><div style="flex:1"><label>Número</label><input name="num" maxlength="10"></div><div style="flex:1"><label>Complemento</label><input name="comp" maxlength="60"></div></div>
+    <label>Bairro (entrega)</label><select name="b">${bairrosOpts()}</select><div class="sum" id="taxainfo" style="margin-top:4px">Escolha o bairro para ver a taxa.</div>
+    <label>Ponto de referência</label><input name="ref" maxlength="120">
+  </div>
+  <label>Forma de pagamento</label>
+  <select id="pay" name="pay">${payOptions()}</select>
+  <div id="pixinfo" class="sum" style="margin-top:6px;display:${V.pay==='pix'?'block':'none'}">Chave PIX do restaurante: ${esc(S.s.pix)}. A confirmação do pagamento é feita pela equipe.</div>
+  <div id="troco" style="display:${V.pay==='dinheiro'?'block':'none'}"><label>Precisa de troco?</label><div class="r" style="justify-content:flex-start;gap:14px"><label style="margin:0;color:var(--tx)"><input type="radio" name="trocosim" value="nao" checked style="width:auto"> Não</label><label style="margin:0;color:var(--tx)"><input type="radio" name="trocosim" value="sim" style="width:auto"> Sim</label></div><div id="trocoval" style="display:none"><label>Troco para quanto? (valor que você vai entregar)</label><input name="troco" inputmode="decimal" placeholder="Ex.: 100" maxlength="10"></div></div>
+  <label>Observações do pedido</label><textarea name="obs" rows="2" maxlength="300"></textarea>
+  <div id="tot" style="margin-top:14px">${totHTML(t)}</div>
+  <button type="submit" style="width:100%;margin-top:10px">Finalizar pedido</button>
+  </form>`;
+}
+function updTot(){const f=$('#ck');if(!f)return;
+  const mod=(f.querySelector('[name=mod]:checked')||{}).value||'entrega',b=(f.querySelector('[name=b]')||{}).value||'';
+  const x=bairroOk(b),t=totals(S.cart,V.cpn,mod,b);
+  $('#tot').innerHTML=totHTML(t);
+  const ti=$('#taxainfo');if(ti)ti.textContent=mod==='entrega'?(x?'Bairro: '+x.nome+' · Taxa: '+money(x.taxa):'Selecione um bairro atendido para calcular a taxa.'):'Retirada no restaurante: sem taxa.'}
+
+/* Finalização: travada entre abas (Web Locks), relê o estado salvo, e reconhece o token de idempotência */
+function finalize(f){
+  if(V.sending)return;
+  const d=Object.fromEntries(new FormData(f));
+  V.sending=true;
+  const run=()=>{try{commit(d)}finally{V.sending=false}};
+  if(navigator.locks)navigator.locks.request('bistro-central-pedidos',run);else run();
+}
+function commit(d){
+  reload();
+  const dup=d.tk&&S.o.find(o=>o.tk===d.tk);
+  if(dup){V.last=dup.id;V.view='ok';V.tk='';return render()}
+  if(!(d.n||'').trim()||(d.p||'').replace(/\D/g,'').length<10)return toast('Informe nome e telefone válidos');
+  if(!PAY_MOD[d.mod]||!PAY_MOD[d.mod].includes(d.pay))return toast('Forma de pagamento indisponível para esta modalidade');
+  if(d.mod==='entrega'&&(!d.a||!d.num||!d.b))return toast('Preencha endereço, número e bairro para entrega');
+  if(d.mod==='entrega'&&!bairroOk(d.b))return toast('Escolha um bairro atendido para a entrega');
+  if(!S.s.open)return toast('O restaurante está fechado');
+  if(!S.cart.length)return toast('Seu carrinho está vazio');
+  const t=totals(S.cart,V.cpn,d.mod,d.b);
+  if(t.sub-t.disc<S.s.min)return toast('Pedido abaixo do valor mínimo');
+  const querTroco=d.pay==='dinheiro'&&d.trocosim==='sim';
+  let troco='';
+  if(querTroco){const v=+String(d.troco||'').replace(',','.');if(!(v>0))return toast('Informe para quanto será o troco');if(v<t.tot)return toast('O troco precisa ser igual ou maior que o total ('+money(t.tot)+')');troco=v}
+  const c={n:d.n.trim(),p:d.p.trim(),a:d.a||'',num:d.num||'',comp:d.comp||'',b:d.b||'',ref:d.ref||'',obs:d.obs||''};
+  const od=place(c,d.mod,d.pay,S.cart,V.cpn,troco,undefined,undefined,d.tk);
+  log('Pedido recebido',od.id);
+  S.cart=[];V.cpn='';V.view='ok';V.last=od.id;V.tk='';
+  persist();remember(od.cod);render();
+}
+function pedidoTexto(od){
+  const L=[`Pedido ${od.id} — ${S.s.name}`,`Código de acompanhamento: ${fmtCode(od.cod)}`,'','PRODUTOS'];
+  od.it.forEach(i=>{L.push(`${i.q}x ${i.n} — ${money(i.u*i.q)}`);i.ad.forEach(a=>L.push(`   + ${a}`));if(i.obs)L.push(`   Obs.: ${i.obs}`)});
+  L.push(`Valor dos produtos: ${money(od.sub)}`,'');
+  if(od.mod==='entrega'){L.push('ENTREGA',`Bairro: ${od.c.b}`,`Taxa de entrega: ${money(od.fee)}`,'')}
+  else{L.push('RETIRADA: no restaurante, sem taxa','')}
+  L.push('RESUMO',`Subtotal: ${money(od.sub)}`);
+  if(od.disc)L.push(`Desconto${od.cpn?' ('+od.cpn+')':''}: − ${money(od.disc)}`);
+  L.push(`Entrega: ${money(od.fee)}`,`TOTAL: ${money(od.tot)}`,'');
+  L.push('PAGAMENTO',`Forma de pagamento: ${PAY[od.pay]||od.pay}`);
+  if(od.pay==='dinheiro'){L.push(`Precisa de troco? ${od.troco!==''?'Sim':'Não'}`);if(od.troco!==''){L.push(`Troco para: ${money(od.troco)}`,`Troco a devolver: ${money(od.troco-od.tot)}`)}}
+  L.push('','CLIENTE',`Nome: ${od.c.n}`,`Telefone: ${od.c.p}`);
+  L.push(od.mod==='entrega'?`Endereço: ${od.c.a}, ${od.c.num}${od.c.comp?' ('+od.c.comp+')':''} — ${od.c.b}${od.c.ref?' · Ref.: '+od.c.ref:''}`:'Retirada no restaurante');
+  if(od.c.obs)L.push(`Observações: ${od.c.obs}`);
+  return L.join('\n');
+}
+function bairrosOpts(){return '<option value="">Selecione o bairro</option>'+(S.bairros||[]).filter(x=>x.ativo).map(x=>`<option value="${esc(x.nome)}">${esc(x.nome)} · ${money(x.taxa)}</option>`).join('')}
+function resumo(od){return `<div class="r"><b>${esc(od.id)}</b><span class="tag">${esc(stLabel(od))}</span></div><div class="sum" style="margin:6px 0">${new Date(od.ts).toLocaleString('pt-BR')}</div><pre style="white-space:pre-wrap;font:inherit;font-size:14px;line-height:1.5;margin:8px 0;background:var(--bg);padding:10px;border-radius:10px;border:1px solid var(--bd)">${esc(pedidoTexto(od))}</pre>`}
+function waLink(od){return `https://wa.me/${S.s.wa}?text=${encodeURIComponent(pedidoTexto(od))}`}
+function vOk(){const od=find(V.last);if(!od){V.view='menu';return vCli()}
+  return `<div class="c"><h2>Pedido ${esc(od.id)} recebido</h2>
+  <p>Código de acompanhamento: <b style="font-size:20px;letter-spacing:1px">${esc(fmtCode(od.cod))}</b></p>
+  <div class="sum">Guarde este código. Ele é a única forma de acompanhar o pedido por outro aparelho.</div>
+  <div style="margin-top:12px">${resumo(od)}</div>
+  <div class="r" style="margin-top:14px;justify-content:flex-start"><a class="b" href="${waLink(od)}" target="_blank" rel="noopener">Enviar resumo pelo WhatsApp</a><button class="s" data-a="view" data-v="acomp">Acompanhar pedido</button><button class="s" data-a="view" data-v="menu">Voltar ao cardápio</button></div></div>`;
+}
+function vPed(){
+  const m=meus(),lst=S.o.filter(o=>m.includes(o.cod));
+  return `<button class="s" data-a="view" data-v="menu">← Cardápio</button><h2 style="margin-top:12px">Meus pedidos</h2>
+  <div class="sum" style="margin-bottom:10px">Pedidos feitos neste aparelho.</div>
+  ${lst.map(o=>`<div class="c" style="margin-bottom:10px">${resumo(o)}${o.st==='cancelado'&&o.motivo?`<p class="sum">Motivo: ${esc(o.motivo)}</p>`:''}</div>`).join('')||'<div class="sum">Nenhum pedido feito neste aparelho.</div>'}
+  <div style="margin-top:12px"><button class="s" data-a="view" data-v="acomp">Acompanhar outro pedido com código</button></div>`;
+}
+function vAcomp(){
+  const q=normCode(V.trk),o=q?S.o.find(x=>x.cod===q):null;
+  return `<button class="s" data-a="view" data-v="menu">← Cardápio</button><h2 style="margin-top:12px">Acompanhar pedido</h2>
+  <div class="c r" style="margin-bottom:12px"><input id="trk" placeholder="Código do pedido (ex.: ABCDE-FGHJK)" value="${esc(V.trk)}" maxlength="16" style="max-width:280px"><button data-a="trkgo">Acompanhar</button></div>
+  ${q?(o?trkCard(o):'<div class="sum">Código não encontrado. Confira os caracteres e tente de novo.</div>'):'<div class="sum">Informe o código recebido na confirmação do pedido.</div>'}`;
+}
+function trkCard(o){
+  return `<div class="c"><div class="r"><b>${esc(o.id)}</b><span class="tag">${esc(stLabel(o))}</span></div>
+  <div class="sum">${o.mod==='entrega'?'Entrega':'Retirada'} · feito em ${new Date(o.ts).toLocaleString('pt-BR')}</div>
+  <div style="margin-top:10px">${o.st==='cancelado'?`<p class="sum">Pedido cancelado${o.motivo?'. Motivo: '+esc(o.motivo):''}.</p>`:timeline(o).map(s=>`<div class="step" style="${s.done?'':'opacity:.5'}"><span>${s.cur?'●':s.done?'✓':'○'}</span><span style="${s.cur?'font-weight:700':''}">${esc(s.label)}</span></div>`).join('')}</div></div>`;
+}
+
+/* ---------- ATENDIMENTO ---------- */
+function vAtend(){
+  return `<div class="r" style="margin-bottom:12px"><div><h2>Atendimento</h2><div class="sum">Os pedidos chegam aqui automaticamente.</div></div>
+  <div class="r" style="gap:8px"><input id="bq" placeholder="Pesquisar número, cliente ou telefone" value="${esc(V.bq)}" style="width:280px"><button class="s" data-a="sound">${S.snd?'🔔 Som ligado':'🔕 Som desligado'}</button></div></div>
+  <div id="board">${boardAtend()}</div>`;
+}
+function boardAtend(){
+  const q=V.bq.toLowerCase(),os=S.o.filter(x=>!q||(x.id+x.c.n+x.c.p).toLowerCase().includes(q));
+  return `<div class="cols">${Object.keys(SL).map(st=>{const l=os.filter(x=>x.st===st);
+    return `<div class="col"><div class="r" style="margin-bottom:8px"><b>${esc(SL[st])}</b><span class="tag">${l.length}</span></div>${l.map(cardAt).join('')||'<div class="sum">Nenhum pedido</div>'}</div>`}).join('')}</div>`;
+}
+function cardAt(x){
+  const late=['novo','aceito','preparo'].includes(x.st)&&mins(x.ts)>S.s.prep;
+  const id=esc(x.id);let b='';
+  if(canMove(x,'aceito'))b+=`<button class="ok" data-a="st" data-id="${id}" data-to="aceito">Confirmar e encaminhar</button>`;
+  if(canMove(x,'cancelado'))b+=`<button class="bad" data-a="cancel" data-id="${id}">Recusar</button>`;
+  if(canMove(x,'concluido'))b+=`<button class="ok" data-a="st" data-id="${id}" data-to="concluido">Entregue ao cliente</button>`;
+  if(x.pagst!=='recebido'&&x.st!=='cancelado'&&SES&&['admin','atend','entregador'].includes(SES.r))b+=`<button class="s" data-a="pagok" data-id="${id}">Pagamento recebido</button>`;
+  b+=`<button class="s" data-a="prio" data-id="${id}">${x.prio?'Remover prioridade':'Prioridade'}</button><button class="s" data-a="print" data-id="${id}">Comanda</button>`;
+  return `<div class="c" style="margin-bottom:10px;${x.prio?'border-color:var(--ac)':''}">
+  <div class="r"><b>${id}</b><span class="sum">${new Date(x.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span></div>
+  <div><span class="tag">${x.mod==='entrega'?'Entrega':'Retirada'}</span> <span class="tag">${esc(stLabel(x))}</span></div>
+  <div style="margin-top:6px">${esc(x.c.n)} <span class="sum">${esc(x.c.p)}</span></div>
+  <div class="sum">${x.mod==='entrega'?'Endereço: '+esc(x.c.a)+', '+esc(x.c.num)+' - '+esc(x.c.b):'Retirada no balcão'} · ${esc(PAY[x.pay]||x.pay)}${x.troco?' · troco para '+money(x.troco):''} · ${x.pagst==='recebido'?'pago':'a confirmar'}</div>
+  <div style="margin:6px 0">${x.it.map(i=>`${esc(i.q)}× ${esc(i.n)}${i.ad.length?' (+ '+esc(i.ad.join(', '))+')':''}`).join('<br>')}</div>
+  ${x.c.obs?`<div class="sum">Obs.: ${esc(x.c.obs)}</div>`:''}
+  ${x.motivo?`<div class="sum">Motivo: ${esc(x.motivo)}</div>`:''}
+  <div class="r"><b>${money(x.tot)}</b>${late?'<span class="late">Atrasado</span>':''}</div>
+  <div class="r" style="justify-content:flex-start;margin-top:10px">${b}</div></div>`;
+}
+function openCancel(id){modal(`<h3>Recusar pedido ${esc(id)}</h3><label>Justificativa (obrigatória)</label><textarea id="mot" rows="3" maxlength="300" placeholder="Ex.: item em falta, fora da área de entrega"></textarea><div class="r" style="margin-top:12px;justify-content:flex-end"><button class="bad" data-a="cancelok" data-id="${esc(id)}">Confirmar recusa</button></div>`)}
+function openComanda(id){const o=find(id);if(o)modal(`<div id="cmd">${resumo(o)}</div><div class="r" style="justify-content:flex-end;margin-top:10px"><button class="s" onclick="window.print()">Imprimir</button></div>`)}
+function openOcor(id){modal(`<h3>Registrar ocorrência</h3><label>Descrição</label><textarea id="oc" rows="3" maxlength="300"></textarea><div class="r" style="margin-top:12px;justify-content:flex-end"><button data-a="ocorok" data-id="${esc(id)}">Salvar</button></div>`)}
+
+/* ---------- COZINHA ---------- */
+function vCoz(){
+  const ant=S.o.filter(x=>x.st==='concluido').slice(0,8);
+  return `<h1 style="font-size:30px">Cozinha</h1><div class="sum" style="font-size:16px;margin-bottom:12px">Pedidos confirmados pelo atendimento aparecem aqui.</div>
+  <div id="board">${boardCoz()}</div>
+  <h3 style="margin-top:20px">Pedidos anteriores</h3>
+  ${ant.map(x=>`<div class="sum" style="margin:4px 0">${esc(x.id)} · ${x.it.map(i=>esc(i.q)+'× '+esc(i.n)).join(', ')}</div>`).join('')||'<div class="sum">Nenhum pedido concluído ainda.</div>'}`;
+}
+function boardCoz(){
+  const os=S.o.filter(x=>x.st==='aceito'||x.st==='preparo').sort((a,b)=>b.prio-a.prio||a.ts-b.ts);
+  return os.length?`<div class="g">${os.map(x=>{const late=mins(x.ts)>S.s.prep,id=esc(x.id);return `<div class="c kd" style="${late?'border:2px solid var(--bad);':''}${x.prio?'box-shadow:0 0 0 2px var(--ac);':''}">
+  <div class="r"><b style="font-size:24px">${id}</b><span class="${late?'late':''}">há ${mins(x.ts)} min</span></div>
+  <div class="sum">${x.prio?'Prioridade · ':''}${esc(stLabel(x))} · ${x.mod==='entrega'?'Entrega':'Retirada'}</div>
+  <div style="margin:10px 0;font-size:18px">${x.it.map(i=>`<div><b>${esc(i.q)}×</b> ${esc(i.n)}${i.ad.length?`<div class="sum" style="font-size:15px">+ ${esc(i.ad.join(', '))}</div>`:''}${i.obs?`<div class="late" style="font-size:15px">${esc(i.obs)}</div>`:''}</div>`).join('')}</div>
+  ${x.c.obs?`<div class="sum">Obs.: ${esc(x.c.obs)}</div>`:''}
+  <div class="r" style="margin-top:10px">${canMove(x,'preparo')?`<button data-a="st" data-id="${id}" data-to="preparo" style="min-height:48px">Iniciar preparo</button>`:''}${canMove(x,'pronto')?`<button class="ok" data-a="st" data-id="${id}" data-to="pronto" style="min-height:48px">Marcar como pronto</button>`:''}<button class="s" data-a="prio" data-id="${id}">${x.prio?'Tirar prioridade':'Prioridade'}</button></div></div>`}).join('')}</div>`:'<div class="c">Nenhum pedido em produção.</div>';
+}
+
+/* ---------- ENTREGADOR ---------- */
+function vEnt(){return `<h2>Entregas</h2><div class="sum" style="margin-bottom:12px">Pedidos prontos para entrega e entregas em rota.</div><div id="board">${boardEnt()}</div>`}
+function boardEnt(){
+  const os=S.o.filter(x=>x.mod==='entrega'&&(x.st==='pronto'||x.st==='rota')).sort((a,b)=>a.ts-b.ts);
+  return os.length?`<div class="g">${os.map(x=>{const addr=`${x.c.a}, ${x.c.num} - ${x.c.b}`,id=esc(x.id);return `<div class="c">
+  <div class="r"><b>${id}</b><span class="tag">${esc(stLabel(x))}</span></div>
+  <div class="kd" style="margin-top:8px">${esc(x.c.a)}, ${esc(x.c.num)}${x.c.comp?' · '+esc(x.c.comp):''}</div>
+  <div class="sum">${esc(x.c.b)}${x.c.ref?' · Ref.: '+esc(x.c.ref):''}</div>
+  <div style="margin:8px 0">${esc(x.c.n)} · <a href="tel:${esc(x.c.p.replace(/\D/g,''))}">${esc(x.c.p)}</a></div>
+  <div class="sum">Pagamento: ${esc(PAY[x.pay]||x.pay)}${x.pay==='dinheiro'||x.pay==='entrega'?' · cobrar '+money(x.tot):''}${x.troco?' · troco para '+money(x.troco):''}</div>
+  <div class="r" style="margin-top:10px;justify-content:flex-start;gap:8px">
+  <a class="b" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" style="background:var(--pri)">Abrir no mapa</a>
+  ${canMove(x,'rota')?`<button data-a="st" data-id="${id}" data-to="rota">Saiu para entrega</button>`:''}
+  ${canMove(x,'concluido')?`<button class="ok" data-a="st" data-id="${id}" data-to="concluido">Marcar como entregue</button>`:''}
+  <button class="s" data-a="ocor" data-id="${id}">Ocorrência</button></div>
+  ${x.ocor.length?`<div class="sum" style="margin-top:6px">Ocorrências: ${x.ocor.map(esc).join(' | ')}</div>`:''}</div>`}).join('')}</div>`:'<div class="c">Nenhuma entrega disponível agora.</div>';
+}
+
+/* ---------- ADMINISTRAÇÃO ---------- */
+function vAdm(){
+  const tabs=[['dash','Painel'],['func','Funcionários'],['menu','Cardápio'],['taxas','Taxas de entrega'],['cfg','Configurações'],['aud','Auditoria']];
+  return `<div class="r" style="justify-content:flex-start;margin-bottom:12px">${tabs.map(([k,l])=>`<button class="${V.adm===k?'':'s'}" data-a="adm" data-v="${k}">${l}</button>`).join('')}</div>
+  ${{dash:vDash,func:vFunc,menu:vMenu,taxas:vTaxas,cfg:vCfg,aud:vAud}[V.adm]()}`;
+}
+function vDash(){
+  const N={hoje:1,'7d':7,'30d':30}[V.per];
+  const from=V.per==='hoje'?new Date().setHours(0,0,0,0):Date.now()-N*864e5;
+  const os=S.o.filter(x=>x.ts>=from&&x.st!=='cancelado');
+  const rec=os.filter(x=>x.pagst==='recebido').reduce((t,x)=>t+x.tot,0);
+  const aRec=os.filter(x=>x.pagst!=='recebido').reduce((t,x)=>t+x.tot,0);
+  const tm=os.length?os.reduce((t,x)=>t+x.tot,0)/os.length:0;
+  const and=S.o.filter(x=>ATIVOS.includes(x.st)).length;
+  const cnt={};os.forEach(x=>x.it.forEach(i=>cnt[i.n]=(cnt[i.n]||0)+i.q));
+  const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const bars=[];
+  for(let i=N-1;i>=0;i--){const d0=new Date(Date.now()-i*864e5).setHours(0,0,0,0),d1=d0+864e5;
+    bars.push([new Date(d0).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),S.o.filter(x=>x.ts>=d0&&x.ts<d1&&x.st!=='cancelado').reduce((t,x)=>t+x.tot,0)])}
+  const mx=Math.max(1,...bars.map(b=>b[1]));
+  return `<div class="r" style="justify-content:flex-start;margin-bottom:12px">${[['hoje','Hoje'],['7d','7 dias'],['30d','30 dias']].map(([k,l])=>`<button class="${V.per===k?'':'s'}" data-a="per" data-v="${k}">${l}</button>`).join('')}</div>
+  <div class="g">${[['Pedidos (sem cancelados)',os.length],['Recebido',money(rec)],['A confirmar',money(aRec)],['Em andamento',and],['Ticket médio',money(tm)]].map(([l,v])=>`<div class="c"><div class="sum">${esc(l)}</div><div style="font-size:24px;font-weight:700">${esc(v)}</div></div>`).join('')}</div>
+  <div class="c" style="margin-top:12px"><b>Vendas por dia</b><div class="bar">${bars.map(b=>`<div style="height:${b[1]/mx*100}%" title="${esc(money(b[1]))}"><span>${esc(b[0])}</span></div>`).join('')}</div></div>
+  <div class="c" style="margin-top:12px"><b>Produtos mais vendidos</b>${top.map(([n,q])=>`<div class="r"><span>${esc(n)}</span><b>${esc(q)}</b></div>`).join('')||'<div class="sum">Sem vendas no período.</div>'}</div>`;
+}
+function vFunc(){
+  return `<div class="c"><b>Novo funcionário</b><form id="nf" style="margin-top:6px">
+  <div class="r" style="gap:10px;align-items:flex-start"><div style="flex:2;min-width:180px"><label>Nome</label><input name="n" required maxlength="80"></div>
+  <div style="flex:1;min-width:120px"><label>Usuário</label><input name="user" required maxlength="30" pattern="[a-z0-9._-]+"></div>
+  <div style="flex:1;min-width:140px"><label>Função</label><select name="r"><option value="atend">Atendente</option><option value="cozinha">Cozinha</option><option value="entregador">Entregador</option></select></div>
+  <div style="flex:1;min-width:140px"><label>Senha inicial (mín. 6)</label><input name="pass" type="password" required minlength="6"></div></div>
+  <button type="submit" style="margin-top:10px">Cadastrar</button></form></div>
+  <div style="margin-top:12px">${S.u.map(u=>`<div class="c" style="margin-top:10px"><div class="r"><span><b>${esc(u.n)}</b> <span class="sum">@${esc(u.user)} · ${esc(ROLE[u.r])}</span></span><span class="tag">${u.on?'Ativo':'Inativo'}</span></div>
+  <div class="r" style="margin-top:8px;justify-content:flex-start"><button class="s" data-a="uon" data-id="${esc(u.id)}" ${u.r==='admin'?'disabled':''}>${u.on?'Desativar':'Reativar'}</button><button class="s" data-a="upass" data-id="${esc(u.id)}">Redefinir senha</button></div></div>`).join('')}</div>`;
+}
+async function addUser(f){
+  const d=Object.fromEntries(new FormData(f)),user=(d.user||'').trim().toLowerCase();
+  if(!d.n||!user||!d.pass||d.pass.length<6)return toast('Preencha os campos. A senha precisa de 6 caracteres');
+  if(S.u.some(u=>u.user===user))return toast('Este usuário já existe');
+  const s=hex(16);
+  try{const h=await hash(d.pass,s);S.u.push({id:'u'+Date.now(),n:d.n.trim(),user,r:d.r,on:1,s,h});log('Funcionário cadastrado',user);save();toast('Funcionário cadastrado')}
+  catch(e){toast('Este navegador não consegue cadastrar senhas com segurança')}
+}
+function vMenu(){
+  return `<div class="c"><b>Novo produto</b><form id="np" style="margin-top:6px">
+  <div class="r" style="gap:10px;align-items:flex-start"><div style="flex:2;min-width:180px"><label>Nome</label><input name="name" required maxlength="80"></div>
+  <div style="flex:1;min-width:120px"><label>Categoria</label><input name="cat" value="Hambúrgueres" maxlength="40"></div>
+  <div style="width:100px"><label>Preço</label><input name="price" inputmode="decimal" required></div>
+  <div style="width:70px"><label>Emoji</label><input name="e" value="🍽️" maxlength="4"></div></div>
+  <label>Descrição</label><input name="desc" maxlength="160">
+  <label>Adicionais (ex.: Bacon extra:4; Ovo:3)</label><input name="ad" maxlength="200">
+  <button type="submit" style="margin-top:10px">Adicionar ao cardápio</button></form></div>
+  <div>${S.p.map(p=>`<div class="c" style="margin-top:10px"><div class="r"><span>${esc(p.e)} <b>${esc(p.name)}</b> <span class="sum">${esc(p.cat)}</span></span><span class="tag">${p.av?'Disponível':'Indisponível'}</span></div>
+  <div class="r" style="margin-top:8px;justify-content:flex-start;gap:12px"><label style="margin:0;width:130px">Preço<input type="number" step="0.5" value="${esc(p.price)}" data-pid="${esc(p.id)}" data-f="price"></label>
+  <label style="margin:0;width:130px">Promoção %<input type="number" min="0" max="90" value="${esc(p.promo)}" data-pid="${esc(p.id)}" data-f="promo"></label>
+  <button class="s" data-a="avail" data-id="${esc(p.id)}">${p.av?'Tornar indisponível':'Ativar'}</button><button class="bad" data-a="delp" data-id="${esc(p.id)}">Excluir</button></div></div>`).join('')}</div>`;
+}
+function addProd(f){
+  const d=Object.fromEntries(new FormData(f));
+  if(!d.name||!d.price)return toast('Informe nome e preço');
+  S.p.push({id:'p'+Date.now(),cat:d.cat||'Outros',name:d.name.trim(),desc:d.desc||'',price:+String(d.price).replace(',','.')||0,promo:0,e:d.e||'🍽️',av:1,ad:parseKV(d.ad||'')});
+  log('Produto cadastrado',d.name);save();toast('Produto adicionado');
+}
+function vCfg(){const s=S.s;return `<form id="cfg" class="c">
+  <div class="r" style="gap:12px;align-items:flex-start"><div style="flex:1;min-width:200px"><label>Nome do restaurante</label><input name="name" value="${esc(s.name)}" maxlength="60"></div><div style="flex:1;min-width:200px"><label>Horário de funcionamento</label><input name="hours" value="${esc(s.hours)}" maxlength="80"></div></div>
+  <div class="r" style="gap:12px"><div style="flex:1"><label>WhatsApp (código do país + DDD + número)</label><input name="wa" value="${esc(s.wa)}"></div><div style="flex:1"><label>Chave PIX</label><input name="pix" value="${esc(s.pix)}" maxlength="80"></div></div>
+  <div class="r" style="gap:12px"><div style="flex:1"><label>Tempo de preparo (min)</label><input name="prep" type="number" value="${esc(s.prep)}"></div><div style="flex:1"><label>Pedido mínimo (R$)</label><input name="min" type="number" step="0.5" value="${esc(s.min)}"></div></div>
+  <div class="sum" style="margin:6px 0">Taxas de entrega: cadastre na aba "Taxas de entrega".</div>
+  <label>Cupons (ex.: BISTRO10:10)</label><input name="cp" value="${esc(Object.entries(S.cp).map(([k,v])=>k+':'+v).join('; '))}">
+  <label>Aceitar pedidos</label><select name="open"><option value="1" ${s.open?'selected':''}>Sim, restaurante aberto</option><option value="0" ${s.open?'':'selected'}>Não, fechado</option></select>
+  <div class="r" style="margin-top:14px"><button type="submit">Salvar configurações</button><button type="button" class="s" data-a="reset">Restaurar dados de demonstração</button></div></form>`}
+function saveCfg(f){
+  const d=Object.fromEntries(new FormData(f)),s=S.s;
+  s.name=(d.name||s.name).trim();s.hours=d.hours||'';s.wa=(d.wa||'').replace(/\D/g,'');s.pix=d.pix||'';
+  s.prep=+d.prep||s.prep;s.min=+d.min||0;
+  s.open=d.open==='1'?1:0;
+  S.cp=Object.fromEntries(parseKV(d.cp||'').map(([k,v])=>[k.toUpperCase(),v]));
+  log('Configurações alteradas','');save();toast('Configurações salvas');
+}
+function vTaxas(){
+  return `<div class="c"><b>Novo bairro atendido</b><form id="nb" style="margin-top:6px"><div class="r" style="gap:10px;align-items:flex-end"><div style="flex:2;min-width:180px"><label>Bairro</label><input name="nome" required maxlength="60"></div><div style="flex:1;min-width:120px"><label>Taxa (R$)</label><input name="taxa" inputmode="decimal" required></div><button type="submit">Adicionar</button></div></form></div>
+  <div class="sum" style="margin:12px 0 4px">Desativar tira o bairro do checkout. Pedidos antigos mantêm a taxa registrada no momento da compra.</div>
+  ${(S.bairros||[]).map(x=>`<div class="c" style="margin-top:8px"><div class="r"><b>${esc(x.nome)}</b><span class="tag">${x.ativo?'Ativo':'Desativado'}</span></div><div class="r" style="margin-top:8px;justify-content:flex-start;gap:10px"><label style="margin:0;width:150px">Taxa (R$)<input type="number" step="0.5" min="0" value="${esc(x.taxa)}" data-bid="${esc(x.id)}" data-bf="taxa"></label><label style="margin:0;flex:1;min-width:140px">Nome<input value="${esc(x.nome)}" maxlength="60" data-bid="${esc(x.id)}" data-bf="nome"></label><button class="s" data-a="btoggle" data-id="${esc(x.id)}">${x.ativo?'Desativar':'Ativar'}</button><button class="bad" data-a="bdel" data-id="${esc(x.id)}">Excluir</button></div></div>`).join('')||'<div class="sum">Nenhum bairro cadastrado. Sem bairro ativo, não é possível finalizar entregas.</div>'}`;
+}
+function addBairro(f){
+  const d=Object.fromEntries(new FormData(f));
+  const nome=(d.nome||'').trim(),taxa=+String(d.taxa||'').replace(',','.');
+  if(!nome)return toast('Informe o nome do bairro');
+  if(!(taxa>=0))return toast('Informe uma taxa válida');
+  if((S.bairros||[]).some(x=>x.nome.toLowerCase()===nome.toLowerCase()))return toast('Este bairro já está cadastrado');
+  S.bairros=(S.bairros||[]).concat([{id:'b'+Date.now(),nome,taxa,ativo:true}]);
+  log('Bairro cadastrado',nome);save();toast('Bairro adicionado');
+}
+function vAud(){return `<div class="c">${S.log.slice(0,100).map(l=>`<div class="sum" style="padding:5px 0;border-bottom:1px solid var(--bd)">${new Date(l[0]).toLocaleString('pt-BR')} · <b>${esc(l[1])}</b> · ${esc(l[2])} ${esc(l[3])}</div>`).join('')||'<div class="sum">Nenhum registro.</div>'}</div>`}
+
+/* ---------- EVENTOS ---------- */
+document.addEventListener('click',e=>{
+  if(e.target===$('#mo'))return closeModal();
+  const t=e.target.closest('[data-a]');if(!t)return;
+  const d=t.dataset;
+  switch(d.a){
+    case 'go':R=d.r;V.view='menu';render();window.scrollTo(0,0);break;
+    case 'logout':logout();break;
+    case 'forgot':modal('<h3>Esqueci minha senha</h3><p class="sum">A recuperação automática por e-mail depende do Supabase Auth, ainda não configurado. Peça ao administrador para redefinir sua senha.</p>');break;
+    case 'close':closeModal();break;
+    case 'view':V.view=d.v;render();window.scrollTo(0,0);break;
+    case 'trkgo':V.trk=($('#trk').value||'').trim();render();break;
+    case 'cat':V.cat=d.v;render();break;
+    case 'open':openProd(d.id);break;
+    case 'q':V.qty=Math.max(1,V.qty+ +d.d);$('#qv').textContent=V.qty;updPv();break;
+    case 'addcart':{const ad=checked(),obs=$('#obs').value.trim();S.cart.push({pid:V.pid,qty:V.qty,ad,obs});closeModal();save();toast('Adicionado ao carrinho');break}
+    case 'cq':S.cart[+d.i].qty=Math.max(1,S.cart[+d.i].qty+ +d.d);save();break;
+    case 'crm':S.cart.splice(+d.i,1);save();break;
+    case 'cupom':{const v=($('#cp').value||'').trim().toUpperCase();if(v&&!S.cp[v]){V.cpn='';toast('Cupom inválido')}else{V.cpn=v;toast(v?'Cupom aplicado':'Cupom removido')}render();break}
+    case 'st':setSt(d.id,d.to);break;
+    case 'cancel':{const o=find(d.id);if(o&&canMove(o,'cancelado'))openCancel(d.id);else toast('Esta ação não está disponível para o seu perfil');break}
+    case 'cancelok':{const m=$('#mot').value.trim();if(!m)return toast('Informe a justificativa');const o=find(d.id);if(!o||!canMove(o,'cancelado'))return toast('Esta ação não está disponível para o seu perfil');o.motivo=m;closeModal();setSt(d.id,'cancelado');break}
+    case 'pagok':{if(!SES||!['admin','atend','entregador'].includes(SES.r))return toast('Sem permissão');const o=find(d.id);if(!o||o.st==='cancelado')break;o.pagst='recebido';log('Pagamento recebido',o.id);save();break}
+    case 'prio':{if(!SES)return toast('Entre na área da equipe');const od=find(d.id);if(od){od.prio=od.prio?0:1;save()}break}
+    case 'print':openComanda(d.id);break;
+    case 'ocor':openOcor(d.id);break;
+    case 'ocorok':{const txt=$('#oc').value.trim();if(!txt)return toast('Descreva a ocorrência');const o=find(d.id);if(o){o.ocor.push(txt);log('Ocorrência registrada',o.id)}closeModal();save();break}
+    case 'sound':S.snd=S.snd?0:1;if(S.snd)beep();save();break;
+    case 'adm':V.adm=d.v;render();break;
+    case 'per':V.per=d.v;render();break;
+    case 'uon':{const u=S.u.find(x=>x.id===d.id);if(!u||u.r==='admin')break;u.on=u.on?0:1;log((u.on?'Reativou':'Desativou')+' funcionário',u.user);save();break}
+    case 'upass':modal(`<h3>Redefinir senha</h3><label>Nova senha (mín. 6)</label><input id="npw" type="password" minlength="6"><div class="r" style="margin-top:12px;justify-content:flex-end"><button data-a="upassok" data-id="${esc(d.id)}">Salvar</button></div>`);break;
+    case 'upassok':{const pw=$('#npw').value;if(pw.length<6)return toast('A senha precisa de 6 caracteres');const u=S.u.find(x=>x.id===d.id);if(!u)break;const s=hex(16);hash(pw,s).then(h=>{u.s=s;u.h=h;log('Senha redefinida',u.user);closeModal();save();toast('Senha redefinida')}).catch(()=>toast('Este navegador não consegue cadastrar senhas com segurança'));break}
+    case 'avail':{const p=S.p.find(x=>x.id===d.id);if(p){p.av=p.av?0:1;log('Produto '+(p.av?'ativado':'desativado'),p.name);save()}break}
+    case 'delp':modal(`<h3>Excluir produto?</h3><p class="sum">O produto sai do cardápio e do carrinho. Pedidos anteriores são mantidos.</p><div class="r" style="justify-content:flex-end"><button class="bad" data-a="delok" data-id="${esc(d.id)}">Excluir</button></div>`);break;
+    case 'delok':{const p=S.p.find(x=>x.id===d.id);S.p=S.p.filter(x=>x.id!==d.id);S.cart=S.cart.filter(x=>x.pid!==d.id);log('Produto excluído',p?p.name:'');closeModal();save();break}
+    case 'reset':modal('<h3>Restaurar dados de demonstração?</h3><p class="sum">Pedidos, cardápio, funcionários e configurações voltam ao estado inicial.</p><div class="r" style="justify-content:flex-end"><button class="bad" data-a="resetok">Restaurar</button></div>');break;
+    case 'btoggle':{const b=(S.bairros||[]).find(x=>x.id===d.id);if(b){b.ativo=!b.ativo;log((b.ativo?'Ativou':'Desativou')+' bairro',b.nome);save()}break}
+    case 'bdel':modal(`<h3>Excluir bairro?</h3><p class="sum">Pedidos antigos continuam com a taxa registrada no momento da compra.</p><div class="r" style="justify-content:flex-end"><button class="bad" data-a="bdelok" data-id="${esc(d.id)}">Excluir</button></div>`);break;
+    case 'bdelok':{const b=(S.bairros||[]).find(x=>x.id===d.id);S.bairros=(S.bairros||[]).filter(x=>x.id!==d.id);log('Bairro excluído',b?b.nome:'');closeModal();save();break}
+    case 'resetok':seed();SES=null;sessionStorage.removeItem(SKEY);R='cliente';V.view='menu';closeModal();initUsers();save();toast('Dados restaurados');break;
+  }
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='q'){V.q=t.value;$('#grid').innerHTML=grid()}
+  else if(t.id==='bq'){V.bq=t.value;$('#board').innerHTML=boardAtend()}
+  else if(t.name==='b')updTot();
+});
+document.addEventListener('change',e=>{
+  const t=e.target,d=t.dataset;
+  if(t.name==='mod'){V.mod=t.value;V.pay=PAY_MOD[V.mod][0];$('#addr').style.display=V.mod==='entrega'?'block':'none';$('#pay').innerHTML=payOptions();paySwitch();updTot()}
+  else if(t.name==='pay'){V.pay=t.value;paySwitch()}
+  else if(t.name==='ad')updPv();
+  else if(t.name==='trocosim'){$('#trocoval').style.display=t.value==='sim'?'block':'none'}
+  else if(t.name==='b')updTot();
+  else if(d.bf){const b=(S.bairros||[]).find(x=>x.id===d.bid);if(b){if(d.bf==='taxa'){const v=+String(t.value).replace(',','.');if(!(v>=0)){toast('Taxa inválida');return render()}b.taxa=v}else{const n=(t.value||'').trim();if(!n){toast('Informe o nome do bairro');return render()}b.nome=n}log('Bairro alterado',b.nome);save()}}
+  else if(d.f){const p=S.p.find(x=>x.id===d.pid);if(p){p[d.f]=+String(t.value).replace(',','.')||0;log('Produto alterado',p.name);save()}}
+});
+document.addEventListener('submit',e=>{
+  e.preventDefault();const f=e.target;
+  if(f.id==='ck')finalize(f);
+  else if(f.id==='np')addProd(f);
+  else if(f.id==='cfg')saveCfg(f);
+  else if(f.id==='login')doLogin(f);
+  else if(f.id==='nf')addUser(f);
+  else if(f.id==='nb')addBairro(f);
+});
+window.addEventListener('storage',e=>{if(e.key===KEY){load();loadSes();render()}});
+setInterval(()=>{const b=$('#board');if(!b)return;
+  b.innerHTML=R==='atend'?boardAtend():R==='cozinha'?boardCoz():R==='entregador'?boardEnt():b.innerHTML},20000);
+
+load();loadSes();render();initUsers();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){});});}</script>
+</body>
+</html>
